@@ -52,6 +52,17 @@ class Newton(object):
         else:
             x0 = 0 #change to achieve correct dimensions
             
+    def step(f, x0, gradient, tolerance):
+        x=x0
+        while true:
+            g=gradient(x)
+            H=hessian(x)
+            Hinv=np.linalg.inv(H)
+            d=-np.multiply(Hinv,g)
+            alpha= findAlpha(f,x, d)
+            x+=alpha*d
+            if abs(np.linalg.norm(alpha*d)) < tolerance:
+                return x
 
 
     def exactLineSearch(self,xk):
