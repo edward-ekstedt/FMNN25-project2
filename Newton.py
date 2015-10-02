@@ -44,13 +44,16 @@ class optimizationProblem(object):
         
 
 class Newton(optimizationProblem):
+    
     def step(self,x0):
         x=x0
         while True:
-            gx=self.g(x)
-            Hx=self.hessian(x)
-            Hinv=np.linalg.inv(Hx)
-            self.d=-np.multiply(Hinv,gx)
+            g=self.g(x)
+            H=self.hessian(x)
+            U = np.linalg.cholesky(H)
+            Uinv = np.linalg.inv(U)
+            Hinv = np.multiply(Uinv,np.transpose(Uinv))
+            self.d=-np.multiply(Hinv,g)
             alpha= self.exactLineSearch(x)
             x+=alpha*self.d
             if abs(np.linalg.norm(alpha*self.d)) < self.tol:
