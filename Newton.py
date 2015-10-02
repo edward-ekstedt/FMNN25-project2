@@ -28,4 +28,11 @@ class optimizationMethod(object):
             x0 = 0 #change to achieve correct dimensions
             
 
-            
+    def exactLineSearch(self,xk):
+        
+        alpha = linspace()
+        
+        f_alpha = np.array([self.op.f(xk-alpha[i]*sk for i in range(len(alpha))])
+        alpha_k = alpha[np.argmin(f_alpha)]
+        
+        return alpha_k
