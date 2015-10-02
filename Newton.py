@@ -43,22 +43,14 @@ class optimizationProblem(object):
         return (self.f(x+deltax + deltay)-self.f(x + deltax) -self.f(x + deltay) + self.f(x))/self.dx**2
         
 
-class Newton(object):
+class Newton(optimizationProblem):
     
-    def __init__(self,optimizationProblem,x0 = None):
-        self.op = optimizationProblem
-        if not x0 == None:
-            self.x0 = x0
-        else:
-            x0 = 0 #change to achieve correct dimensions
-            
 
 
     def exactLineSearch(self,xk):
+        alpha = np.linspace(0,10**10,0.1)
         
-        alpha = linspace()
-        
-        f_alpha = np.array([self.op.f(xk-alpha[i]*sk for i in range(len(alpha))])
+        f_alpha = np.array([self.f(xk-alpha[i]*sk) for i in range(len(alpha))])
         alpha_k = alpha[np.argmin(f_alpha)]
         
         return alpha_k
