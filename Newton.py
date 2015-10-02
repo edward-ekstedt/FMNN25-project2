@@ -12,18 +12,18 @@ import scipy as sp
 
 class optimizationProblem(object):
     
-    def __init__(self,function, dimensions, gradient = None):
+    def __init__(self,function, dimensions,tolerance, gradient = None):
+        self.tol = tolerance
         self.dx = 0.0000000001
         self.f = function
-        self.dimensions
+        self.dimensions = dimensions
         if gradient:
             self.g = gradient
         else:
             def grad(x):
                 return np.array([(self.f(x+self.dx*delta[i]/2.)-self.f(x-self.dx*delta[i])/2.)/self.dx] for i in range(dimensions))
             delta = sp.identity(self.dimensions)
-            self.g = grad
-        
+            self.g = grad        
         self.hessian = self.computeHessian()
         
     def computeHessian(self):
@@ -44,34 +44,23 @@ class optimizationProblem(object):
         
 
 class Newton(optimizationProblem):
-    
-<<<<<<< HEAD
-=======
-    def __init__(self,optimizationProblem,x0 = None):
-        self.op = optimizationProblem
-        if not x0 == None:
-            self.x0 = x0
-        else:
-            x0 = 0 #change to achieve correct dimensions
-            
-    def step(f, x0, gradient, tolerance):
+    def step(self,x0):
         x=x0
-        while true:
-            g=gradient(x)
-            H=hessian(x)
-            Hinv=np.linalg.inv(H)
-            d=-np.multiply(Hinv,g)
-            alpha= findAlpha(f,x, d)
-            x+=alpha*d
-            if abs(np.linalg.norm(alpha*d)) < tolerance:
+        while True:
+            gx=self.g(x)
+            Hx=self.hessian(x)
+            Hinv=np.linalg.inv(Hx)
+            self.d=-np.multiply(Hinv,gx)
+            alpha= self.exactLineSearch(x)
+            x+=alpha*self.d
+            if abs(np.linalg.norm(alpha*self.d)) < self.tol:
                 return x
->>>>>>> origin/master
 
 
     def exactLineSearch(self,xk):
         alpha = np.linspace(0,10**10,0.1)
         
-        f_alpha = np.array([self.f(xk-alpha[i]*sk) for i in range(len(alpha))])
+        f_alpha = np.array([self.f(xk-alpha[i]*self.d) for i in range(len(alpha))])
         alpha_k = alpha[np.argmin(f_alpha)]
         
         return alpha_k
