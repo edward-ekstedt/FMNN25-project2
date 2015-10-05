@@ -75,40 +75,61 @@ class Newton(optimizationProblem):
 class inexactNewton(Newton):
     
     def lineSearch(self,xk,sK):
-        def f_alpha(alpha):
-            return self.f(xk+alpha*sK)
-        def f_prime_alpha(alpha):
-            return (f_alpha(alpha+self.dx)-f_alpha(alpha))/self.dx
-        alpha0 = 0
-        alphaL = 0
-        alphaU = 10**99
+
         self.rho = 0.1
         self.sigma = 0.7
         self.tau  =0.1
         self.chi = 9.
-        while not (LC and RC):
-            if not LC:
-                [alpha0,alphaL] = self.notLC(alpha0,alphaL,f_prime_alpha(alpha0),f_prime_alpha(alphaL))
+        self.alpha0 = 0
+        self.alphaL = 0
+        self.alphaU = 10**99
+        self.computeValues(xk, sK)
+        while not (self.LC() and self.RC()):
+            if not self.LC():
+                self.block1()
                 
             else:
-                [alpha0,alphaU] = self.notRC(alpha0,alphaU,alphaL,f_alpha(alphaL),f_alpha(alpha0),f_prime_alpha(alphaL))
+                self.block2()
+            self.computeValues(xk, sK)
             
+    def computeValues(self, xk, sK):
+        def f_alpha(alpha):
+            return self.f(xk+alpha*sK)
+        def f_prime_alpha(alpha):
+            return (f_alpha(alpha+self.dx)-f_alpha(alpha))/self.dx
+        self.f_alphaL = f_alpha(self.alphaL)
+        self.f_alpha0 = f_alpha(self.alpha0)
+        self.f_prime_aL = f_prime_alpha(self.alphaL)
+        self.f_prime_a0 = f_prime_alpha(self.alpha0)
+    
+    #Compute the left and right conditions according to Goldstein
+    def LC(self):
+        return self.f_alpha0 >= (self.f_alphaL + (1-self.rho)*(self.alpha0 - self.alphaL)*self.f_prime_aL)
+    def RC(self):
+        return self.f_alpha0 <= (self.f_alphaL + self.rho*(self.alpha0 - self.alphaL)*self.f_prime_aL)
+#==============================================================================
+#     #Compute the left and right conditions according to Wolfe-Powel
+#     def LC(self):
+#         return self.f_prime_a0 >= self.sigma*self.f_prime_aL
+#     def RC(self):
+#         return self.f_alpha0 <= self.f_alphaL + self.rho*(self.alpha0 - self.alphaL)*self.f_prime_aL
+#==============================================================================
         
-    def notLC(self,alpha0,alphaL,f_prime_a0, f_prime_aL):
-        deltaAlpha = (alpha0-alphaL)*(f_prime_a0/(f_prime_aL-f_prime_a0))
-        deltaAlpha = np.max([deltaAlpha, self.tau*(alpha0-alphaL)])
-        deltaAlpha = np.min([deltaAlpha, self.chi*(alpha0-alphaL)])
-        alphaL = alpha0
-        alpha0 = alpha0 + deltaAlpha
-        return np.array([alpha0, alphaL])
-        
-    def notRC(self,alpha0,alphaU,alphaL,f_alphaL,f_alpha0,f_prime_aL):
-        alphaU = np.min([alpha0,alphaU])
-        alphaBar = (alpha0-alphaL)**2*f_prime_aL/(2*(f_alphaL-f_alpha0 + (alpha0-alphaL)*f_prime_aL))
-        alphaBar = np.max([alphaBar,alphaL + self.tau*(alphaU-alphaL)])
-        alphaBar = np.min([alphaBar,alphaU - self.tau*(alphaU-alphaL)])
-        return np.array([alphaBar,alphaU])
+    
+    def block1(self):
+        deltaAlpha = (self.alpha0-self.alphaL)*(self.f_prime_a0/(self.f_prime_aL-self.f_prime_a0))
+        deltaAlpha = np.max([deltaAlpha, self.tau*(self.alpha0-self.alphaL)])
+        deltaAlpha = np.min([deltaAlpha, self.chi*(self.alpha0-self.alphaL)])
+        self.alphaL = self.alpha0
+        self.alpha0 = self.alpha0 + deltaAlpha
 
+    def block2(self):
+        self.alphaU = np.min([self.alpha0,self.alphaU])
+        alphaBar = (self.alpha0-self.alphaL)**2*self.f_prime_aL/(2*(self.f_alphaL-self.f_alpha0 + (self.alpha0-self.alphaL)*self.f_prime_aL))
+        alphaBar = np.max([alphaBar,self.alphaL + self.tau*(self.alphaU-self.alphaL)])
+        alphaBar = np.min([alphaBar,self.alphaU - self.tau*(self.alphaU-self.alphaL)])
+        self.alpha0 = alphaBar
+        
 def main():
     def f(x):
         return x[1]**2 + x[0]**2
