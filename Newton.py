@@ -48,10 +48,10 @@ class optimizationProblem(object):
 class Newton(optimizationProblem):
     
     def step(self,x):
-        H = self.hessian(x)
-        U = np.linalg.cholesky(H)
-        Uinv = np.linalg.inv(U)
-        self.Hinv = np.dot(Uinv,Uinv.T)
+        self.Hinv = np.eye(self.dimensions)
+       # U = np.linalg.cholesky(H)
+        #Uinv = np.linalg.inv(U)
+        #self.Hinv = np.dot(Uinv,Uinv.T)
         while True:
             g=self.g(x)
             sK= -1*np.dot(self.Hinv,g)
@@ -83,8 +83,8 @@ class Newton(optimizationProblem):
         self.sigma = 0.7
         self.tau  =0.1
         self.chi = 9.
-        self.alpha0 = 0.001
-        self.alphaL = 0
+        self.alpha0 = 0.0001
+        self.alphaL = 0.
         self.alphaU = 10**99
         self.computeValues(xk, sK)
         while not (self.LC() and self.RC()):
@@ -107,18 +107,20 @@ class Newton(optimizationProblem):
         self.f_prime_aL = f_prime_alpha(self.alphaL)
         self.f_prime_a0 = f_prime_alpha(self.alpha0)
     
-    #Compute the left and right conditions according to Goldstein
-    def LC(self):
-        return self.f_alpha0 >= (self.f_alphaL + (1-self.rho)*(self.alpha0 - self.alphaL)*self.f_prime_aL)
-    def RC(self):
-        return self.f_alpha0 <= (self.f_alphaL + self.rho*(self.alpha0 - self.alphaL)*self.f_prime_aL)
 #==============================================================================
-#     #Compute the left and right conditions according to Wolfe-Powel
+#     #Compute the left and right conditions according to Goldstein
 #     def LC(self):
-#         return self.f_prime_a0 >= self.sigma*self.f_prime_aL
+#         return self.f_alpha0 >= (self.f_alphaL + (1-self.rho)*(self.alpha0 - self.alphaL)*self.f_prime_aL)
 #     def RC(self):
-#         return self.f_alpha0 <= self.f_alphaL + self.rho*(self.alpha0 - self.alphaL)*self.f_prime_aL
+#         return self.f_alpha0 <= (self.f_alphaL + self.rho*(self.alpha0 - self.alphaL)*self.f_prime_aL)
+# 
 #==============================================================================
+     #Compute the left and right conditions according to Wolfe-Powel
+    def LC(self):
+         return self.f_prime_a0 >= self.sigma*self.f_prime_aL
+    def RC(self):
+         return self.f_alpha0 <= self.f_alphaL + self.rho*(self.alpha0 - self.alphaL)*self.f_prime_aL
+
         
     
     def block1(self):
@@ -134,9 +136,8 @@ class Newton(optimizationProblem):
         alphaBar = np.min([alphaBar,self.alphaU - self.tau*(self.alphaU-self.alphaL)])
         self.alpha0 = alphaBar
      
-<<<<<<< HEAD
 #==============================================================================
-# class goodBroyden(Newton):
+     # class goodBroyden(Newton):
 #     
 #     
 # class badBroyden(Newton):
@@ -148,30 +149,31 @@ class Newton(optimizationProblem):
 #     
 # class BFGS(Newton):
 #==============================================================================
-=======
+
 #class goodBroyden(Newton):
 #    
 #    def step(self,x0):
 #        asd
 #class badBroyden(Newton):
 #    
-#class DFP(Newton):
-#    
+class DFP(Newton):
+    def update(self,x):
+        delta = self.deltaX
+        gamma = self.g(x)-self.g(x-delta)
+        self.Hinv = self.Hinv + (delta*delta.T)/(delta.T*gamma)-(self.Hinv*gamma*gamma.T*self.Hinv)/(gamma.T*self.Hinv*gamma)
 class BFGS(Newton):
 
     def update(self,x):
         delta = self.deltaX
-        gamma = self.g(x)-self.g(x-delta)
-        Hinv = Hinv + (1+ gamma.T*Hinv*gamma.T/(delta.T*gamma))(delta*delta.T/(delta.T*gamma)) - (delta*gamma*Hinv + Hinv*gamma*delta.T)/(delta.T*gamma)
-        return
->>>>>>> origin/master
+        gamma = (self.g(x)-self.g(x-delta))
+        self.Hinv = self.Hinv + (1+ gamma.T*self.Hinv*gamma/(delta.T*gamma))*(delta*delta.T/(delta.T*gamma)) - (delta*gamma.T*self.Hinv + self.Hinv*gamma*delta.T)/(delta.T*gamma)
 def main():
     def f(x):
         #return x[1]**2 + x[0]**2
         return 100*(x[1]-x[0]**2)**2 + (1 -x[0])**2
         
-    opt = Newton(f,2,0.000001)
-    x = opt.step([2,1.])
+    opt = BFGS(f,2,0.00000001)
+    x = opt.step([0,1.])
     print(f(x))
     print(x)
     
