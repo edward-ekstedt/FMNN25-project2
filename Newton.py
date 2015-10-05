@@ -47,20 +47,27 @@ class optimizationProblem(object):
 
 class Newton(optimizationProblem):
     
-    def step(self,x0):
-        x=x0
+    def step(self,x):
+        H = self.hessian(x)
+        U = np.linalg.cholesky(H)
+        Uinv = np.linalg.inv(U)
+        self.Hinv = np.dot(Uinv,Uinv.T)
         while True:
             g=self.g(x)
-            H=self.hessian(x)
-            U = np.linalg.cholesky(H)
-            Uinv = np.linalg.inv(U)
-            Hinv = np.dot(Uinv,Uinv.T)
-            sK= -1*np.dot(Hinv,g)
+            sK= -1*np.dot(self.Hinv,g)
             alpha= self.inexactLineSearch(x,sK)
-            x= x+alpha*sK
-            if abs(np.linalg.norm(alpha*sK)) < self.tol:
+            self.deltaX = alpha*sK
+            x= x+self.deltaX
+            if abs(np.linalg.norm(self.deltaX)) < self.tol:
                 return x
-
+            self.update(x)
+    
+    def update(self, x):
+        H=self.hessian(x)
+        U = np.linalg.cholesky(H)
+        Uinv = np.linalg.inv(U)
+        self.Hinv = np.dot(Uinv,Uinv.T)
+                
     def exactLineSearch(self,xk,sK):
         alpha = np.linspace(0.,10**4,10**5)
         
@@ -127,16 +134,19 @@ class Newton(optimizationProblem):
         alphaBar = np.min([alphaBar,self.alphaU - self.tau*(self.alphaU-self.alphaL)])
         self.alpha0 = alphaBar
      
-class goodBroyden(Newton):
-    
-    def step(self,x0):
-    
-    return 
-class badBroyden(Newton):
-    
-class DFP(Newton):
-    
-class BFGS(Newton):
+#==============================================================================
+# class goodBroyden(Newton):
+#     
+#     
+# class badBroyden(Newton):
+#     
+#     def step(self, x):
+#         
+#     
+# class DFP(Newton):
+#     
+# class BFGS(Newton):
+#==============================================================================
 def main():
     def f(x):
         #return x[1]**2 + x[0]**2
