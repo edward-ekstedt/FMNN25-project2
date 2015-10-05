@@ -49,6 +49,7 @@ class Newton(optimizationProblem):
     
     def step(self,x):
         self.Hinv = np.eye(self.dimensions)
+        k= 1
        # U = np.linalg.cholesky(H)
         #Uinv = np.linalg.inv(U)
         #self.Hinv = np.dot(Uinv,Uinv.T)
@@ -61,7 +62,9 @@ class Newton(optimizationProblem):
             if abs(np.linalg.norm(self.deltaX)) < self.tol:
                 return x
             self.update(x)
-    
+            #if k > 200:
+             #   return x
+            #k+=1
     def update(self, x):
         H=self.hessian(x)
         U = np.linalg.cholesky(H)
@@ -83,7 +86,7 @@ class Newton(optimizationProblem):
         self.sigma = 0.7
         self.tau  =0.1
         self.chi = 9.
-        self.alpha0 = 0.0001
+        self.alpha0 = 
         self.alphaL = 0.
         self.alphaU = 10**99
         self.computeValues(xk, sK)
@@ -160,20 +163,37 @@ class DFP(Newton):
     def update(self,x):
         delta = self.deltaX
         gamma = self.g(x)-self.g(x-delta)
-        self.Hinv = self.Hinv + (delta*delta.T)/(delta.T*gamma)-(self.Hinv*gamma*gamma.T*self.Hinv)/(gamma.T*self.Hinv*gamma)
+        ddT = np.outer(delta,delta)
+        dtg = delta.T.dot(gamma)
+        Hg = self.Hinv.dot(gamma)
+        gtH = gamma.T.dot(self.Hinv)
+        self.Hinv = self.Hinv + ddT/dtg - (np.outer(Hg,Hg.T))/(gtH.dot(gamma))
+        #self.Hinv = self.Hinv + (delta*delta.T)/(delta.T*gamma)-(self.Hinv*gamma*gamma.T*self.Hinv)/(gamma.T*self.Hinv*gamma)
 class BFGS(Newton):
 
     def update(self,x):
         delta = self.deltaX
         gamma = (self.g(x)-self.g(x-delta))
         self.Hinv = self.Hinv + (1+ gamma.T*self.Hinv*gamma/(delta.T*gamma))*(delta*delta.T/(delta.T*gamma)) - (delta*gamma.T*self.Hinv + self.Hinv*gamma*delta.T)/(delta.T*gamma)
+        
+class BFGStest(Newton):
+    
+    def update(self,x):
+        delta = self.deltaX
+        gamma = (self.g(x)-self.g(x-delta))
+        gth = gamma.dot(self.Hinv)
+        dtg = delta.T.dot(gamma)
+        ddT = np.outer(delta,delta)
+        hg = self.Hinv.dot(gamma)
+        hgd = np.outer(hg,delta)
+        self.Hinv = self.Hinv + (1 + gth.dot(gamma)/dtg)*(ddT/dtg) - (hgd + hgd.T)/dtg
 def main():
     def f(x):
         #return x[1]**2 + x[0]**2
         return 100*(x[1]-x[0]**2)**2 + (1 -x[0])**2
         
-    opt = BFGS(f,2,0.00000001)
-    x = opt.step([0,1.])
+    opt = DFP(f,2,0.00000001)
+    x = opt.step([-2 ,1.])
     print(f(x))
     print(x)
     
