@@ -134,6 +134,7 @@ class Newton(optimizationProblem):
         alphaBar = np.min([alphaBar,self.alphaU - self.tau*(self.alphaU-self.alphaL)])
         self.alpha0 = alphaBar
      
+<<<<<<< HEAD
 #==============================================================================
 # class goodBroyden(Newton):
 #     
@@ -147,6 +148,23 @@ class Newton(optimizationProblem):
 #     
 # class BFGS(Newton):
 #==============================================================================
+=======
+#class goodBroyden(Newton):
+#    
+#    def step(self,x0):
+#        asd
+#class badBroyden(Newton):
+#    
+#class DFP(Newton):
+#    
+class BFGS(Newton):
+
+    def update(self,x):
+        delta = self.deltaX
+        gamma = self.g(x)-self.g(x-delta)
+        Hinv = Hinv + (1+ gamma.T*Hinv*gamma.T/(delta.T*gamma))(delta*delta.T/(delta.T*gamma)) - (delta*gamma*Hinv + Hinv*gamma*delta.T)/(delta.T*gamma)
+        return
+>>>>>>> origin/master
 def main():
     def f(x):
         #return x[1]**2 + x[0]**2
