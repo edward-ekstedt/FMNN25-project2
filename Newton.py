@@ -52,19 +52,16 @@ class Newton(optimizationProblem):
         while True:
             g=self.g(x)
             H=self.hessian(x)
-            print(H)
             U = np.linalg.cholesky(H)
             Uinv = np.linalg.inv(U)
             Hinv = np.dot(Uinv,Uinv.T)
             sK= -1*np.dot(Hinv,g)
-            alpha= self.lineSearch(x,sK)
-            print(alpha)
+            alpha= self.inexactLineSearch(x,sK)
             x= x+alpha*sK
-            print(alpha*sK)
             if abs(np.linalg.norm(alpha*sK)) < self.tol:
                 return x
 
-    def lineSearch(self,xk,sK):
+    def exactLineSearch(self,xk,sK):
         alpha = np.linspace(0.,10**4,10**5)
         
         f_alpha = np.array([self.f(xk+alpha[i]*sK) for i in range(len(alpha))])
@@ -72,15 +69,14 @@ class Newton(optimizationProblem):
         
         return alpha_k
 
-class inexactNewton(Newton):
     
-    def lineSearch(self,xk,sK):
+    def inexactLineSearch(self,xk,sK):
 
         self.rho = 0.1
         self.sigma = 0.7
         self.tau  =0.1
         self.chi = 9.
-        self.alpha0 = 0
+        self.alpha0 = 0.001
         self.alphaL = 0
         self.alphaU = 10**99
         self.computeValues(xk, sK)
@@ -91,7 +87,9 @@ class inexactNewton(Newton):
             else:
                 self.block2()
             self.computeValues(xk, sK)
-            
+        return self.alpha0
+        
+        
     def computeValues(self, xk, sK):
         def f_alpha(alpha):
             return self.f(xk+alpha*sK)
@@ -122,21 +120,30 @@ class inexactNewton(Newton):
         deltaAlpha = np.min([deltaAlpha, self.chi*(self.alpha0-self.alphaL)])
         self.alphaL = self.alpha0
         self.alpha0 = self.alpha0 + deltaAlpha
-
     def block2(self):
         self.alphaU = np.min([self.alpha0,self.alphaU])
         alphaBar = (self.alpha0-self.alphaL)**2*self.f_prime_aL/(2*(self.f_alphaL-self.f_alpha0 + (self.alpha0-self.alphaL)*self.f_prime_aL))
         alphaBar = np.max([alphaBar,self.alphaL + self.tau*(self.alphaU-self.alphaL)])
         alphaBar = np.min([alphaBar,self.alphaU - self.tau*(self.alphaU-self.alphaL)])
         self.alpha0 = alphaBar
-        
+     
+class goodBroyden(Newton):
+    
+    def step(self,x0):
+    
+    return 
+class badBroyden(Newton):
+    
+class DFP(Newton):
+    
+class BFGS(Newton):
 def main():
     def f(x):
-        return x[1]**2 + x[0]**2
+        #return x[1]**2 + x[0]**2
         return 100*(x[1]-x[0]**2)**2 + (1 -x[0])**2
         
-    opt = Newton(f,2,0.001)
-    x = opt.step([500,5.])
+    opt = Newton(f,2,0.000001)
+    x = opt.step([2,1.])
     print(f(x))
     print(x)
     
