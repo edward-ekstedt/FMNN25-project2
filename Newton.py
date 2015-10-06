@@ -94,11 +94,7 @@ class Newton(optimizationProblem):
         self.sigma = 0.7
         self.tau  =0.1
         self.chi = 9.
-<<<<<<< HEAD
-        self.alpha0 = 1
-=======
-        self.alpha0 = 10.
->>>>>>> origin/master
+        self.alpha0 = 1.
         self.alphaL = 0.
         self.alphaU = 10**99
         self.computeValues(xk, sK)
@@ -151,21 +147,7 @@ class Newton(optimizationProblem):
         alphaBar = np.min([alphaBar,self.alphaU - self.tau*(self.alphaU-self.alphaL)])
         self.alpha0 = alphaBar
      
-#==============================================================================
-     # class goodBroyden(Newton):
-#     
-#     
-# class badBroyden(Newton):
-#     
-#     def step(self, x):
-#         
-#     
-# class DFP(Newton):
-#     
-# class BFGS(Newton):
-#==============================================================================
 
-<<<<<<< HEAD
 class goodBroyden(Newton):
     
     def update(self,x):
@@ -174,19 +156,12 @@ class goodBroyden(Newton):
         u = delta - self.Hinv.dot(gamma)
         uuT = np.outer(u,u.T)
         self.Hinv = self.Hinv + uuT/(u.dot(gamma))
-
-#class badBroyden(Newton):
-#    
-=======
-#class goodBroyden(Newton):   
- #   def step(self,x):
         
 class badBroyden(Newton):
     def update(self, x):
         gamma = self.g(x)-self.g(x-self.deltaX)
         delta = self.deltaX
         self.Hinv = self.Hinv + ((gamma - self.Hinv.dot(delta))/(delta.dot(delta))).dot(delta)
->>>>>>> origin/master
 class DFP(Newton):
     def update(self,x):
         delta = self.deltaX
@@ -197,7 +172,7 @@ class DFP(Newton):
         gtH = gamma.T.dot(self.Hinv)
         self.Hinv = self.Hinv + ddT/dtg - (np.outer(Hg,Hg.T))/(gtH.dot(gamma))
         
-        #self.Hinv = self.Hinv + (delta*delta.T)/(delta.T*gamma)-(self.Hinv*gamma*gamma.T*self.Hinv)/(gamma.T*self.Hinv*gamma)
+      
         
 class BFGS(Newton):
     
@@ -214,14 +189,8 @@ def main():
     def f(x):
         #return x[1]**2 + x[0]**2
         return 100*(x[1]-x[0]**2)**2 + (1 -x[0])**2
-        
-<<<<<<< HEAD
-    opt = goodBroyden(f,2,0.00000001)
-    x = opt.step([0,0.])
-=======
     opt = badBroyden(f,2,0.00000001)
     x = opt.step([0 ,1.])
->>>>>>> origin/master
     print(f(x))
     print(x)
     
