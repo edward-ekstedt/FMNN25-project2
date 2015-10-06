@@ -193,9 +193,10 @@ class BFGS(Newton):
 def main():
     def f(x):
         #return x[1]**2 + x[0]**2
+        return x[0]**2 + x[1]**2 + x[2]**2
         return 100*(x[1]-x[0]**2)**2 + (1 -x[0])**2
-    opt = badBroyden(f,2,10**-9)
-    x = opt.step([1,0])
+    opt = badBroyden(f,3,10**-9)
+    x = opt.step([1,1,1])
     print(f(x))
     print(x)
     
