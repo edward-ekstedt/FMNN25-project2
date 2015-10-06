@@ -59,13 +59,6 @@ class Newton(optimizationProblem):
             self.deltaX = alpha*sK
             x= x+self.deltaX
             if abs(np.linalg.norm(self.deltaX)) < self.tol:
-                plt.close('all')
-                x1 = np.linspace(-10,10,1000)
-                y = np.linspace(-10,10,1000)
-                X,Y = np.meshgrid(x1,y)
-                F = self.f([X,Y])
-                plt.figure()
-                CS = plt.contour(X,Y,F,20)
                 return x
             self.update(x)
             self.posDefCheck()
