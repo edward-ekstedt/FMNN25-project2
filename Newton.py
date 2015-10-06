@@ -62,6 +62,7 @@ class Newton(optimizationProblem):
             if abs(np.linalg.norm(self.deltaX)) < self.tol:
                 return x
             self.update(x)
+            self.posDefCheck()
             #if k > 200:
              #   return x
             #k+=1
@@ -70,6 +71,13 @@ class Newton(optimizationProblem):
         U = np.linalg.cholesky(H)
         Uinv = np.linalg.inv(U)
         self.Hinv = np.dot(Uinv,Uinv.T)
+    
+    def posDefCheck(self):
+        try:
+            np.linalg.cholesky(self.Hinv)
+        except np.linalg.LinAlgError:
+            self.Hinv = np.eye(self.dimensions)
+        
                 
     def exactLineSearch(self,xk,sK):
         alpha = np.linspace(0.,10**4,10**5)
@@ -86,7 +94,11 @@ class Newton(optimizationProblem):
         self.sigma = 0.7
         self.tau  =0.1
         self.chi = 9.
+<<<<<<< HEAD
         self.alpha0 = 1
+=======
+        self.alpha0 = 10.
+>>>>>>> origin/master
         self.alphaL = 0.
         self.alphaU = 10**99
         self.computeValues(xk, sK)
@@ -153,6 +165,7 @@ class Newton(optimizationProblem):
 # class BFGS(Newton):
 #==============================================================================
 
+<<<<<<< HEAD
 class goodBroyden(Newton):
     
     def update(self,x):
@@ -164,6 +177,16 @@ class goodBroyden(Newton):
 
 #class badBroyden(Newton):
 #    
+=======
+#class goodBroyden(Newton):   
+ #   def step(self,x):
+        
+class badBroyden(Newton):
+    def update(self, x):
+        gamma = self.g(x)-self.g(x-self.deltaX)
+        delta = self.deltaX
+        self.Hinv = self.Hinv + ((gamma - self.Hinv.dot(delta))/(delta.dot(delta))).dot(delta)
+>>>>>>> origin/master
 class DFP(Newton):
     def update(self,x):
         delta = self.deltaX
@@ -192,8 +215,13 @@ def main():
         #return x[1]**2 + x[0]**2
         return 100*(x[1]-x[0]**2)**2 + (1 -x[0])**2
         
+<<<<<<< HEAD
     opt = goodBroyden(f,2,0.00000001)
     x = opt.step([0,0.])
+=======
+    opt = badBroyden(f,2,0.00000001)
+    x = opt.step([0 ,1.])
+>>>>>>> origin/master
     print(f(x))
     print(x)
     
