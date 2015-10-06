@@ -14,7 +14,7 @@ class optimizationProblem(object):
     
     def __init__(self,function, dimensions,tolerance, gradient = None):
         self.tol = tolerance
-        self.dx = 0.000001
+        self.dx = 0.00001
         self.f = function
         self.dimensions = dimensions
         if gradient:
@@ -86,7 +86,7 @@ class Newton(optimizationProblem):
         self.sigma = 0.7
         self.tau  =0.1
         self.chi = 9.
-        self.alpha0 = 
+        self.alpha0 = 1
         self.alphaL = 0.
         self.alphaU = 10**99
         self.computeValues(xk, sK)
@@ -153,10 +153,15 @@ class Newton(optimizationProblem):
 # class BFGS(Newton):
 #==============================================================================
 
-#class goodBroyden(Newton):
-#    
-#    def step(self,x0):
-#        asd
+class goodBroyden(Newton):
+    
+    def update(self,x):
+        delta = self.deltaX
+        gamma = self.g(x)-self.g(x-delta)
+        u = delta - self.Hinv.dot(gamma)
+        uuT = np.outer(u,u.T)
+        self.Hinv = self.Hinv + uuT/(u.dot(gamma))
+
 #class badBroyden(Newton):
 #    
 class DFP(Newton):
@@ -168,15 +173,10 @@ class DFP(Newton):
         Hg = self.Hinv.dot(gamma)
         gtH = gamma.T.dot(self.Hinv)
         self.Hinv = self.Hinv + ddT/dtg - (np.outer(Hg,Hg.T))/(gtH.dot(gamma))
-        #self.Hinv = self.Hinv + (delta*delta.T)/(delta.T*gamma)-(self.Hinv*gamma*gamma.T*self.Hinv)/(gamma.T*self.Hinv*gamma)
-class BFGS(Newton):
-
-    def update(self,x):
-        delta = self.deltaX
-        gamma = (self.g(x)-self.g(x-delta))
-        self.Hinv = self.Hinv + (1+ gamma.T*self.Hinv*gamma/(delta.T*gamma))*(delta*delta.T/(delta.T*gamma)) - (delta*gamma.T*self.Hinv + self.Hinv*gamma*delta.T)/(delta.T*gamma)
         
-class BFGStest(Newton):
+        #self.Hinv = self.Hinv + (delta*delta.T)/(delta.T*gamma)-(self.Hinv*gamma*gamma.T*self.Hinv)/(gamma.T*self.Hinv*gamma)
+        
+class BFGS(Newton):
     
     def update(self,x):
         delta = self.deltaX
@@ -192,8 +192,8 @@ def main():
         #return x[1]**2 + x[0]**2
         return 100*(x[1]-x[0]**2)**2 + (1 -x[0])**2
         
-    opt = DFP(f,2,0.00000001)
-    x = opt.step([-2 ,1.])
+    opt = goodBroyden(f,2,0.00000001)
+    x = opt.step([0,0.])
     print(f(x))
     print(x)
     
