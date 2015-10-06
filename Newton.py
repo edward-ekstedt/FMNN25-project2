@@ -2,19 +2,29 @@
 """
 Created on Fri Oct  2 10:39:19 2015
 
-@author: Edward
+@author: Edward Ekstedt, Johannes Olsson, Marcus Ågren
 """
 
 # Project 2 FMNN25
 
 import numpy as np
 import scipy as sp
-import matplotlib.pyplot as plt
+import chebyquad_problem as cq
+import scipy.optimize as opt
+import numpy.testing as tst
 class optimizationProblem(object):
-    
-    def __init__(self,function, dimensions,tolerance, gradient = None):
+
+    def __init__(self,function, dimensions,tolerance, gradient = None,dx = 0.000001):
+#==============================================================================
+#         Initializes an optimization problem
+#           param function, the function which is to be minimized
+#           param dimensions, the number of n in R^n
+#           param tolerance, when the change is < tolerance, quits
+#           param gradient, a gradient function, optional
+#           param dx, delta x for computing gradient and hessian
+#==============================================================================
         self.tol = tolerance
-        self.dx = 0.0000001
+        self.dx = dx
         self.f = function
         self.dimensions = dimensions
         if gradient:
@@ -24,20 +34,20 @@ class optimizationProblem(object):
                 return np.array([(self.f(x+self.dx*delta[i])-self.f(x))/self.dx for i in range(dimensions)])
             delta = sp.identity(self.dimensions)
             self.g = grad      
-        self.hessian = self.computeHessian()
+        self.hessian = self._computeHessian()
         
-    def computeHessian(self):
+    def _computeHessian(self):
         def hess(x):
             G = np.zeros((self.dimensions,self.dimensions))
             for row in range(self.dimensions):
                 for col in range(row,self.dimensions):
-                    G[row,col] = self.secondDerivative(row,col,x)
+                    G[row,col] = self._secondDerivative(row,col,x)
                     if col != row:
                         G[col,row] = G[row,col]
             return G
         return hess
         
-    def secondDerivative(self,i,j,x):
+    def _secondDerivative(self,i,j,x):
         deltax = np.zeros(self.dimensions)
         deltay = np.zeros(self.dimensions)
         deltax[i] = self.dx
@@ -46,8 +56,15 @@ class optimizationProblem(object):
 
 
 class Newton(optimizationProblem):
-    
+#==============================================================================
+#     Inherited class, solves optimization problems with Newton's method
+#==============================================================================
     def step(self,x):
+#==============================================================================
+#         Performs a step towards the solution
+#           param x, initial value
+#           returns x, the final value which is the solution
+#==============================================================================
         self.Hinv = np.eye(self.dimensions)
        # U = np.linalg.cholesky(H)
         #Uinv = np.linalg.inv(U)
@@ -60,18 +77,23 @@ class Newton(optimizationProblem):
             x= x+self.deltaX
             if abs(np.linalg.norm(self.deltaX)) < self.tol:
                 return x
-            self.update(x)
             self.posDefCheck()
+            self._update(x)
+            
             #if k > 200:
              #   return x
             #k+=1
-    def update(self, x):
+    def _update(self, x):
         H=self.hessian(x)
         U = np.linalg.cholesky(H)
         Uinv = np.linalg.inv(U)
         self.Hinv = np.dot(Uinv,Uinv.T)
     
     def posDefCheck(self):
+#==============================================================================
+#         Checks if the Hessian is positive definite, if it isn't, the Hessian
+#           is reset to the identity matrix
+#==============================================================================
         try:
             np.linalg.cholesky(self.Hinv)
         except np.linalg.LinAlgError:
@@ -79,11 +101,9 @@ class Newton(optimizationProblem):
         
                 
     def exactLineSearch(self,xk,sK):
-        alpha = np.linspace(0.,10**4,10**5)
-        
+        alpha = np.linspace(0.,10**4,10**5)    
         f_alpha = np.array([self.f(xk+alpha[i]*sK) for i in range(len(alpha))])
-        alpha_k = alpha[np.argmin(f_alpha)]
-        
+        alpha_k = alpha[np.argmin(f_alpha)]   
         return alpha_k
 
     
@@ -155,7 +175,7 @@ class Newton(optimizationProblem):
 
 class goodBroyden(Newton):
     
-    def update(self,x):
+    def _update(self,x):
         delta = self.deltaX
         gamma = self.g(x)-self.g(x-delta)
         u = delta - self.Hinv.dot(gamma)
@@ -163,14 +183,14 @@ class goodBroyden(Newton):
         self.Hinv = self.Hinv + uuT/(u.dot(gamma))
         
 class badBroyden(Newton):
-    def update(self, x):
+    def _update(self, x):
         gamma = self.g(x)-self.g(x-self.deltaX)
         delta = self.deltaX
         dtd = delta.dot(delta)
         Hd = self.Hinv.dot(delta)
         self.Hinv = self.Hinv + np.dot((gamma - Hd)/dtd,delta)
 class DFP(Newton):
-    def update(self,x):
+    def _update(self,x):
         delta = self.deltaX
         gamma = self.g(x)-self.g(x-delta)
         ddT = np.outer(delta,delta)
@@ -181,7 +201,7 @@ class DFP(Newton):
                
 class BFGS(Newton):
     
-    def update(self,x):
+    def _update(self,x):
         delta = self.deltaX
         gamma = (self.g(x)-self.g(x-delta))
         gth = gamma.dot(self.Hinv)
@@ -189,15 +209,40 @@ class BFGS(Newton):
         ddT = np.outer(delta,delta)
         hg = self.Hinv.dot(gamma)
         hgd = np.outer(hg,delta)
+#==============================================================================
+#         try:
+#             tst.assert_allclose(self.Hinv,np.linalg.inv(self._computeHessian()(x)),1e-1)
+#         except AssertionError:
+#             print(False)
+#         else:
+#             print(True)
+#==============================================================================
         self.Hinv = self.Hinv + (1 + gth.dot(gamma)/dtg)*(ddT/dtg) - (hgd + hgd.T)/dtg
-def main():
+
+def chebyTest():
+    n = 8
     def f(x):
-        #return x[1]**2 + x[0]**2
-        return x[0]**2 + x[1]**2 + x[2]**2
+         return cq.chebyquad(x)
+    def g(x):
+        return cq.gradchebyquad(x)
+    opti = BFGS(f,n,10**-9,g)
+    x0 = 0.51*np.ones(n)
+    x1 = opti.step(x0)
+    print(x1)
+    print(f(x1))
+    x2 = opt.fmin_bfgs(f,x0)
+    print(x2)
+
+def rosenTest():
+    n = 2
+    def f(x):
         return 100*(x[1]-x[0]**2)**2 + (1 -x[0])**2
-    opt = badBroyden(f,3,10**-9)
-    x = opt.step([1,1,1])
-    print(f(x))
-    print(x)
-    
+    opti =BFGS(f,n,10**-9)
+    x0 = 5*np.ones(n)
+    x1 = opti.step(x0)  
+    print(x1)
+def main():
+    chebyTest()
+   #rosenTest()
+
 main()

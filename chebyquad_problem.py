@@ -48,7 +48,7 @@ def chebyquad_fcn(x):
         Generator object to compute the exact integral of
         the transformed Chebychev function T(2x-1,i), i=0...n
         """
-        for i in xrange(n):
+        for i in range(n):
             if i % 2 == 0: 
                 yield -1./(i**2 - 1.)
             else:
@@ -62,7 +62,7 @@ def chebyquad_fcn(x):
         of n sample points
         """
         return sum(T(2. * xj - 1., i) for xj in x) / n
-    return array([approx_integral(i) - exint.next() for i in xrange(n)]) 
+    return array([approx_integral(i) - next(exint) for i in range(n)]) 
 
 def chebyquad(x):
     """            
@@ -77,5 +77,5 @@ def gradchebyquad(x):
     """
     chq = chebyquad_fcn(x)
     UM = array([[(i+1) * U(2. * xj - 1., i) 
-                             for xj in x] for i in xrange(len(x) - 1)])
+                             for xj in x] for i in range(len(x) - 1)])
     return dot(chq[1:].reshape((1, -1)), UM).reshape((-1, ))
